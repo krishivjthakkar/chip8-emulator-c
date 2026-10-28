@@ -1,4 +1,13 @@
+
+# Compiled executable
 /chip8
-/build/
+
+# Build files
 *.o
+/build/
+
+# macOS
 .DS_Store
+
+# Editor files
+.vscode/
