@@ -54,6 +54,7 @@ void step(Chip8 *cpu) {
 
         case 0xD000: // Draw
             fprintf(stderr, "Draw instruction not implemented yet.\n");
+            exit(EXIT_FAILURE);
             break;
 
         default: 
@@ -97,6 +98,18 @@ int main(void) {
 
     printf("I = 0x%03X\n", (unsigned)cpu.I);
     puts("I register test passed!");
+
+    cpu.display[0][0] = 1;
+
+    cpu.memory[0x208] = 0x00;
+    cpu.memory[0x209] = 0xE0;
+
+    step(&cpu);
+
+    assert(cpu.display[0][0] == 0);
+    assert(cpu.pc == 0x20A);
+
+    puts("Clear-screen test passed!");
 
     return 0;
 
