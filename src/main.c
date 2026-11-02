@@ -22,6 +22,8 @@ void step(Chip8 *cpu) {
 
     //DECODE: Extract parts of the instruction
     uint8_t x = (opcode >> 8) & 0x0F;
+    uint8_t y = (opcode >> 4) & 0x0F;
+    uint8_t n = opcode & 0x0F;
     uint8_t nn = opcode & 0xFF;
     uint16_t nnn = opcode & 0x0FFF;
 
@@ -52,10 +54,40 @@ void step(Chip8 *cpu) {
             cpu->I = nnn;
             break;
 
-        case 0xD000: // Draw
-            fprintf(stderr, "Draw instruction not implemented yet.\n");
-            exit(EXIT_FAILURE);
+        case 0xD000: {
+            uint8_t start_x = cpu->V[x] % 64; // Wrap around if necessary
+            uint8_t start_y = cpu->V[y] % 32; // Wrap around
+            cpu->V[15] = 0; // Reset VF
+            for (int row = 0; row < n; row++) {
+                uint8_t screen_y = start_y + row;
+                if (screen_y >= 32) {
+                    break;
+                }
+                if ((cpu->I + row) >= 4096) {
+                    break;
+                }
+                uint8_t sprite_byte = cpu->memory[cpu->I + row];
+                for (int col = 0; col < 8; col++) {
+                    uint8_t screen_x = start_x + col;
+
+                    if (screen_x >= 64) {
+                        break;
+                    }
+
+                    if (((sprite_byte >> (7-col)) & 1) == 1) {
+                        if (cpu->display[screen_y][screen_x] == 1) {
+                            cpu->display[screen_y][screen_x] = 0;
+                            cpu->V[15] = 1;
+                        } else {
+                            cpu->display[screen_y][screen_x] = 1;
+                        }
+                    }
+
+                }
+
+            }
             break;
+        }
 
         default: 
             fprintf(stderr, "Unknown opcode: 0x%04X\n", (unsigned)opcode);
@@ -99,6 +131,7 @@ int main(void) {
     printf("I = 0x%03X\n", (unsigned)cpu.I);
     puts("I register test passed!");
 
+    // Clear screen test
     cpu.display[0][0] = 1;
 
     cpu.memory[0x208] = 0x00;
@@ -110,6 +143,42 @@ int main(void) {
     assert(cpu.pc == 0x20A);
 
     puts("Clear-screen test passed!");
+
+    // Drawing test
+    cpu.I = 0x300;
+    cpu.memory[0x300] = 0xF0; // 11110000
+
+    cpu.V[1] = 10;
+    cpu.V[2] = 20;
+
+    cpu.memory[0x20A] = 0xD1;
+    cpu.memory[0x20B] = 0x21;
+
+    step(&cpu);
+
+    assert(cpu.display[20][10] == 1);
+    assert(cpu.display[20][11] == 1);
+    assert(cpu.display[20][12] == 1);
+    assert(cpu.display[20][13] == 1);
+    assert(cpu.pc == 0x20C);
+
+    cpu.memory[0x20C] = 0xD1;
+    cpu.memory[0x20D] = 0x21;
+
+    step(&cpu);
+
+    assert(cpu.display[20][10] == 0);
+    assert(cpu.display[20][11] == 0);
+    assert(cpu.display[20][12] == 0);
+    assert(cpu.display[20][13] == 0);
+    assert(cpu.V[15] == 1);
+    assert(cpu.pc == 0x20E);
+
+    puts("Drawing test passed!");
+
+
+
+
 
     return 0;
 
