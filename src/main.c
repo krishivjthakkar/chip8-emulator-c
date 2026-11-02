@@ -4,7 +4,8 @@
 #include <assert.h>
 #include <string.h>
 
-typedef struct {
+typedef struct
+{
     uint8_t memory[4096];
     uint8_t V[16];
     uint16_t I;
@@ -12,90 +13,104 @@ typedef struct {
     uint8_t display[32][64];
 } Chip8;
 
-void step(Chip8 *cpu) {
+void step(Chip8 *cpu)
+{
     assert(cpu->pc <= 4094);
 
-    //FETCH: Read two bytes as one instruction
+    // FETCH: Read two bytes as one instruction
     uint16_t opcode = ((uint16_t)cpu->memory[cpu->pc] << 8) | cpu->memory[cpu->pc + 1];
 
     cpu->pc += 2;
 
-    //DECODE: Extract parts of the instruction
+    // DECODE: Extract parts of the instruction
     uint8_t x = (opcode >> 8) & 0x0F;
     uint8_t y = (opcode >> 4) & 0x0F;
     uint8_t n = opcode & 0x0F;
     uint8_t nn = opcode & 0xFF;
     uint16_t nnn = opcode & 0x0FFF;
 
-    //EXECUTE
-    switch (opcode & 0xF000) {
-        case 0x0000:
-            if (opcode == 0x00E0) { // Clear the display
-                memset(cpu->display, 0, sizeof(cpu->display));
-            } else {
-                fprintf(stderr, "Unsupported opcode: %04X\n", (unsigned)opcode);
-                exit(1);
-            }
-            break;
-
-        case 0x1000: // Jump to address NNN
-            cpu->pc = opcode & 0x0FFF;
-            break;
-        
-        case 0x6000: // Set VX = NN
-            cpu->V[x] = nn;
-            break;
-
-        case 0x7000: // Add NN to VX
-            cpu->V[x] += nn;
-            break;
-
-        case 0xA000: // Set I = NNN
-            cpu->I = nnn;
-            break;
-
-        case 0xD000: {
-            uint8_t start_x = cpu->V[x] % 64; // Wrap around if necessary
-            uint8_t start_y = cpu->V[y] % 32; // Wrap around
-            cpu->V[15] = 0; // Reset VF
-            for (int row = 0; row < n; row++) {
-                uint8_t screen_y = start_y + row;
-                if (screen_y >= 32) {
-                    break;
-                }
-                if ((cpu->I + row) >= 4096) {
-                    break;
-                }
-                uint8_t sprite_byte = cpu->memory[cpu->I + row];
-                for (int col = 0; col < 8; col++) {
-                    uint8_t screen_x = start_x + col;
-
-                    if (screen_x >= 64) {
-                        break;
-                    }
-
-                    if (((sprite_byte >> (7-col)) & 1) == 1) {
-                        if (cpu->display[screen_y][screen_x] == 1) {
-                            cpu->display[screen_y][screen_x] = 0;
-                            cpu->V[15] = 1;
-                        } else {
-                            cpu->display[screen_y][screen_x] = 1;
-                        }
-                    }
-
-                }
-
-            }
-            break;
+    // EXECUTE
+    switch (opcode & 0xF000)
+    {
+    case 0x0000:
+        if (opcode == 0x00E0)
+        { // Clear the display
+            memset(cpu->display, 0, sizeof(cpu->display));
         }
-
-        default: 
-            fprintf(stderr, "Unknown opcode: 0x%04X\n", (unsigned)opcode);
+        else
+        {
+            fprintf(stderr, "Unsupported opcode: %04X\n", (unsigned)opcode);
             exit(1);
+        }
+        break;
+
+    case 0x1000: // Jump to address NNN
+        cpu->pc = opcode & 0x0FFF;
+        break;
+
+    case 0x6000: // Set VX = NN
+        cpu->V[x] = nn;
+        break;
+
+    case 0x7000: // Add NN to VX
+        cpu->V[x] += nn;
+        break;
+
+    case 0xA000: // Set I = NNN
+        cpu->I = nnn;
+        break;
+
+    case 0xD000:
+    {
+        uint8_t start_x = cpu->V[x] % 64; // Wrap around if necessary
+        uint8_t start_y = cpu->V[y] % 32; // Wrap around
+        cpu->V[15] = 0;                   // Reset VF
+        for (int row = 0; row < n; row++)
+        {
+            uint8_t screen_y = start_y + row;
+            if (screen_y >= 32)
+            {
+                break;
+            }
+            if ((cpu->I + row) >= 4096)
+            {
+                break;
+            }
+            uint8_t sprite_byte = cpu->memory[cpu->I + row];
+            for (int col = 0; col < 8; col++)
+            {
+                uint8_t screen_x = start_x + col;
+
+                if (screen_x >= 64)
+                {
+                    break;
+                }
+
+                if (((sprite_byte >> (7 - col)) & 1) == 1)
+                {
+                    if (cpu->display[screen_y][screen_x] == 1)
+                    {
+                        cpu->display[screen_y][screen_x] = 0;
+                        cpu->V[15] = 1;
+                    }
+                    else
+                    {
+                        cpu->display[screen_y][screen_x] = 1;
+                    }
+                }
+            }
+        }
+        break;
+    }
+
+    default:
+        fprintf(stderr, "Unknown opcode: 0x%04X\n", (unsigned)opcode);
+        exit(1);
     }
 }
 
-int main(void) {
+int main(void)
+{
     Chip8 cpu = {0};
     cpu.pc = 0x200;
 
@@ -176,10 +191,5 @@ int main(void) {
 
     puts("Drawing test passed!");
 
-
-
-
-
     return 0;
-
 }
