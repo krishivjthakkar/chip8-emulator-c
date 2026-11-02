@@ -20,10 +20,11 @@ Implemented:
 - Jump (1NNN), register load (6XNN), addition (7XNN),
   and index register (ANNN)
 - Basic instruction tests using C assertions
+- Sprite drawing and collision detection (DXYN)
+
 
 ## Planned Features
 
-- [ ] Sprite drawing and collision detection (DXYN)
 - [ ] Remaining CHIP-8 instructions
 - [ ] ROM loading from files
 - [ ] Graphics using raylib
