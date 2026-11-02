@@ -11,3 +11,6 @@
 
 # Editor files
 .vscode/
+
+# Debugging
+*.dSYM/
